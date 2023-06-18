@@ -1,0 +1,181 @@
+---
+title: "Homework 1"
+author: "Luka Žibert 89191218"
+date: "2023-18-06"
+output: html_document
+bibliography: references.bib
+---
+
+# Introduction
+
+Air pollution is a pressing environmental issue that affects human health and the overall well-being of our planet. The quality of air in urban areas is a growing concern due to the increased emissions from industries, vehicles, and other anthropogenic sources. In this analysis, we aim to explore and analyze air quality data to gain insights into the patterns and trends of air pollution in different cities.
+
+# Presentation of the Data
+
+## Dataset Overview
+
+The dataset used in this analysis contains air quality measurements from various cities. It provides information on pollutants such as particulate matter (PM2.5, PM10), nitrogen oxides (NO, NO2, NOx), ammonia (NH3), carbon monoxide (CO), sulfur dioxide (SO2), ozone (O3), benzene, toluene, xylene, and the corresponding Air Quality Index (AQI) values.
+
+## Load necessary libraries
+
+```{r import}
+library(tidyverse)
+library(ggplot2)
+```
+
+## Load and preview dataset
+
+```{r}
+aqi_data <- read.csv("city_day.csv")
+
+head(aqi_data)
+```
+
+## Column Description
+
+- Column 1: City - The name of the city where air quality data was recorded.
+- Column 2: Date - The date when the air quality measurements were recorded.
+  Column 3: PM2.5 - The concentration of particulate matter (PM2.5) in the air. Unit: μg/m³.
+- Column 4: PM10 - The concentration of particulate matter (PM10) in the air. Unit: μg/m³.
+- Column 5: NO - The concentration of nitrogen monoxide (NO) in the air. Unit: ppb (parts per billion).
+- Column 6: NO2 - The concentration of nitrogen dioxide (NO2) in the air. Unit: ppb.
+- Column 7: NOx - The concentration of nitrogen oxides (NOx) in the air. Unit: ppb.
+- Column 8: NH3 - The concentration of ammonia (NH3) in the air. Unit: ppb.
+- Column 9: CO - The concentration of carbon monoxide (CO) in the air. Unit: ppm (parts per million).
+- Column 10: SO2 - The concentration of sulfur dioxide (SO2) in the air. Unit: ppb.
+- Column 11: O3 - The concentration of ozone (O3) in the air. Unit: ppb.
+- Column 12: Benzene - The concentration of benzene in the air. Unit: µg/m³ (micrograms per cubic meter).
+- Column 13: Toluene - The concentration of toluene in the air. Unit: µg/m³.
+- Column 14: Xylene - The concentration of xylene in the air. Unit: µg/m³.
+- Column 15: AQI - The Air Quality Index (AQI) calculated based on various pollutants.
+- Column 16: AQI_Bucket - The categorical bucket or range in which the AQI falls.
+
+# Aggregation of Data
+
+## Average AQI by City
+
+
+```{r, echo=TRUE}
+average_aqi_by_city <- aqi_data %>%
+  group_by(City) %>%
+  summarise(Average_AQI = mean(AQI, na.rm = TRUE))
+
+head(average_aqi_by_city)
+```
+
+## Maximum PM2.5 Levels by Month
+
+```{r, echo=TRUE}
+max_pm2.5_by_month <- aqi_data %>%
+  mutate(Month = format(as.Date(Date), "%m")) %>%
+  group_by(Month) %>%
+  summarise(Max_PM2.5 = max(PM2.5, na.rm = TRUE))
+
+head(max_pm2.5_by_month)
+```
+
+## Total Number of Exceedances by Pollutant
+
+```{r, echo=TRUE}
+    exceedances_by_pollutant <- aqi_data %>%
+
+summarise(
+Exceedances_PM10 = sum(PM10 > 100, na.rm = TRUE),
+Exceedances_NO2 = sum(NO2 > 40, na.rm = TRUE),
+Exceedances_CO = sum(CO > 4, na.rm = TRUE)
+)
+
+head(exceedances_by_pollutant)
+```
+
+
+
+# Exploratory Data Analysis
+
+## Time Series Plot of AQI Trends in a Specific City
+
+Firstly, we will focus on the city of Delhi. To understand the temporal variations in air quality, let's visualize the AQI trends.
+
+```{r, echo=TRUE}
+specific_city <- "Delhi" # Choose a city for analysis
+specific_city_data <- aqi_data %>%
+  filter(City == specific_city)
+
+specific_city_monthly_avg <- specific_city_data %>%
+  mutate(Month = lubridate::month(Date, label = TRUE)) %>%
+  group_by(Month) %>%
+  summarise(Avg_AQI = mean(AQI))
+
+ggplot(specific_city_monthly_avg, aes(x = Month, y = Avg_AQI)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = paste("Average AQI by Month in", specific_city),
+       x = "Month",
+       y = "Average AQI") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  theme(axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 1))
+       
+```
+
+## Boxplot of AQI Values across Different Cities
+
+Next, let's examine the distribution of AQI values across different cities using a boxplot.
+
+```{r, echo=TRUE}
+ggplot(aqi_data, aes(x = City, y = AQI)) +
+  geom_boxplot() +
+  labs(title = "Distribution of AQI across Cities",
+       x = "City",
+       y = "AQI") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  theme(axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+The boxplot above provides an overview of the distribution of AQI values in different cities.
+
+## Monthly Average AQI in Different Cities
+
+To gain insights into the spatial distribution of AQI values in different regions of India, we created a dodged bar plot showcasing the monthly average AQI for each city.
+
+```{r, echo=TRUE}
+monthly_avg_aqi <- aqi_data %>%
+  mutate(Month = lubridate::month(Date, label = TRUE)) %>%
+  group_by(City, Month) %>%
+  summarise(Avg_AQI = mean(AQI))
+
+ggplot(monthly_avg_aqi, aes(x = Month, y = Avg_AQI, fill = City)) +
+  geom_col(position = "dodge") +
+  labs(title = "Monthly Average AQI in Different Cities",
+       x = "Month",
+       y = "Average AQI",
+       fill = "City") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
+  scale_fill_viridis_d(option = "magma")
+```
+
+We used the "magma" color scale for the fill colors of the bars, enhancing the visual differentiation between cities.
+
+## Bar Chart of AQI Buckets across Different Cities
+
+Lastly, let's create a bar chart to analyze the distribution of AQI buckets across different cities.
+
+```{r, echo=TRUE}
+ggplot(aqi_data, aes(x = City, fill = AQI_Bucket)) +
+  geom_bar() +
+  labs(title = "AQI Bucket Distribution across Cities",
+       x = "City",
+       fill = "AQI Bucket") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  theme(axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+The bar chart above displays the distribution of AQI buckets in various cities.
+
+# Conclusion
+In this report, we looked at data on air quality from several cities to understand trends in air pollution. We noted differences in AQI values between cities, located temporal trends, and emphasized the effects on human health and the environment. The report highlights the requirement for focused initiatives to lower pollution levels, put emission controls in place, and increase public awareness. We can work toward cleaner and healthier environments for both the present and future generations by studying the regional distribution of AQI and eliminating the sources of pollution.
+
+## References
+* Dataset Location: Kaggle - Air Quality Index (AQI) Data. Retrieved from
+[@airqualitydata]
+
+
