@@ -1,5 +1,5 @@
 ---
-title: "Homework 1"
+title: "Air pollution Project Report"
 author: "Luka Žibert 89191218"
 date: "2023-18-06"
 output: html_document
